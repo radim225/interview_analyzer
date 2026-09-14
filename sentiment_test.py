@@ -1,15 +1,29 @@
-import streamlit as st
-import requests
+import os
 
-# Azure credentials
-api_key = "8WhfdepAAQKiGIdNMEetUvALbtHNRaG8Rmx0IYtEIXCO985Nyi10JQQJ99BEACHYHv6XJ3w3AAAEACOGEUNE"
-endpoint = "https://sentimentdemo01.cognitiveservices.azure.com/"
-sentiment_url = endpoint + "/text/analytics/v3.0/sentiment"
-keyphrase_url = endpoint + "/text/analytics/v3.0/keyPhrases"
+import requests
+import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
+
+api_key = (os.getenv("AZURE_COGNITIVE_KEY") or os.getenv("AZURE_LANGUAGE_KEY") or "").strip()
+endpoint = (os.getenv("AZURE_COGNITIVE_ENDPOINT") or "").strip().rstrip("/")
+sentiment_url = f"{endpoint}/text/analytics/v3.0/sentiment"
+keyphrase_url = f"{endpoint}/text/analytics/v3.0/keyPhrases"
 
 st.set_page_config(page_title="Interview Answer Analyzer", page_icon="💼")
 st.title("💼 Interview Answer Analyzer")
 st.write("Paste your answer to: **Why should we hire you?**")
+
+if not api_key or not endpoint:
+    missing = []
+    if not api_key:
+        missing.append("`AZURE_COGNITIVE_KEY` or `AZURE_LANGUAGE_KEY`")
+    if not endpoint:
+        missing.append("`AZURE_COGNITIVE_ENDPOINT`")
+    st.error("Missing required environment variable(s): " + ", ".join(missing))
+    st.info("Copy `.env.example` to `.env`, add your Azure Language resource values, then restart the app. See the README.")
+    st.stop()
 
 user_input = st.text_area("✍️ Your answer", "")
 
@@ -39,7 +53,7 @@ if st.button("🔍 Analyze"):
 
     st.subheader("🔎 Azure AI Analysis")
     st.markdown(f"**Sentiment**: `{sentiment.upper()}`")
-    
+
     st.subheader("📊 Confidence Breakdown")
     st.markdown(f"- **Positive tone:** {score_pos:.2%} confidence")
     st.markdown(f"- **Neutral elements:** {score_neu:.2%}")
